@@ -1,50 +1,53 @@
-# Welcome to your Expo app 👋
+# Guia Turistica Catamarca
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+## Descripcion de la aplicacion
+Guia Turistica Catamarca es una aplicacion desarrollada para explorar puntos de interes de San Fernando del Valle de Catamarca. La app permite:
 
-## Get started
+1. Visualizar una lista de lugares turisticos en formato de tarjetas.
+2. Ingresar al detalle de cada punto turistico.
+3. Ver mapa con ubicacion del lugar (web y dispositivos moviles).
+4. Consultar informacion adicional como categoria, direccion, horario, costo y servicios.
 
-1. Install dependencies
+## Tecnologias utilizadas
+1. Expo
+2. React Native
+3. TypeScript
+4. Expo Router
+5. React Native Maps (Android/iOS)
+6. Google Maps embed para visualizacion web
+7. Supabase (autenticacion)
 
-   ```bash
-   npm install
-   ```
-
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+## Instrucciones de instalacion y ejecucion
+1. Clonar el repositorio.
+2. Instalar dependencias:
 
 ```bash
-npm run reset-project
+npm install
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+3. Crear archivo `.env` en la raiz del proyecto (opcional pero recomendado para geocodificacion con Google):
 
-## Learn more
+```env
+EXPO_PUBLIC_GOOGLE_MAPS_API_KEY=tu_api_key_de_google
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+4. Ejecutar en modo desarrollo:
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+```bash
+npm run start
+```
 
-## Join the community
+5. Ejecutar en web:
 
-Join our community of developers creating universal apps.
+```bash
+npm run web
+```
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+6. Ejecutar en Android:
+
+```bash
+npm run android
+```
+
+## Nombre del estudiante
+Mario Ivan Carreño - MU N° 129
