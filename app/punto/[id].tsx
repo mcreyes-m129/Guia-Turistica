@@ -1,6 +1,7 @@
-import { useLocalSearchParams, Stack } from 'expo-router';
+import { useLocalSearchParams, Stack, useRouter } from 'expo-router';
 import { Image } from 'expo-image';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { Linking, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import React from 'react';
 
 import { puntosDeInteres } from '@/assets/images/puntos-interes';
@@ -10,6 +11,7 @@ import { ThemedView } from '@/components/themed-view';
 import { resolvePuntoLocation } from '@/services/location-provider';
 
 export default function PuntoDetalleScreen() {
+  const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const punto = puntosDeInteres.find((item) => item.id === id);
   const [location, setLocation] = React.useState({ lat: punto?.ubicacion.lat ?? 0, lng: punto?.ubicacion.lng ?? 0, source: 'static' as 'google' | 'nominatim' | 'static' });
@@ -54,6 +56,14 @@ export default function PuntoDetalleScreen() {
         ? 'OpenStreetMap Nominatim'
         : 'Coordenada cargada localmente';
 
+  const handleOpenInMaps = async () => {
+    const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${location.lat},${location.lng}`;
+    const canOpen = await Linking.canOpenURL(mapsUrl);
+    if (canOpen) {
+      await Linking.openURL(mapsUrl);
+    }
+  };
+
   if (!punto) {
     return (
       <ThemedView style={styles.notFoundContainer}>
@@ -68,52 +78,122 @@ export default function PuntoDetalleScreen() {
     <ThemedView style={styles.container}>
       <Stack.Screen options={{ title: punto.nombre }} />
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <Image source={punto.imagenes[0]} style={styles.image} contentFit="cover" />
-        <View style={styles.infoCard}>
-          <ThemedText type="title" style={styles.name}>
-            {punto.nombre}
-          </ThemedText>
-          <ThemedText style={styles.description}>{punto.descripcion}</ThemedText>
+        <View style={styles.frame}>
+        <View style={styles.heroCard}>
+          <Image source={punto.imagenes[0]} style={styles.heroImage} contentFit="cover" />
+          <View style={styles.heroOverlay} />
+          <Pressable style={styles.backButton} onPress={() => router.back()}>
+            <Ionicons name="chevron-back" size={20} color="#fff" />
+          </Pressable>
+          <View style={styles.heroContent}>
+            <View style={styles.categoryPill}>
+              <Ionicons name="pricetag-outline" size={12} color="#fff" />
+              <ThemedText style={styles.categoryPillText}>{punto.categoria}</ThemedText>
+            </View>
+            <ThemedText type="title" style={styles.name}>
+              {punto.nombre}
+            </ThemedText>
+            <ThemedText style={styles.description}>{punto.descripcion}</ThemedText>
+          </View>
+        </View>
 
+        <View style={styles.sectionCard}>
           <ThemedText type="defaultSemiBold" style={styles.sectionTitle}>
-            Mapa
+            Información rápida
           </ThemedText>
+          <View style={styles.infoGrid}>
+            <View style={styles.metricCard}>
+              <Ionicons name="time-outline" size={18} color="#256D85" />
+              <ThemedText style={styles.metricLabel}>Duración</ThemedText>
+              <ThemedText style={styles.metricValue}>{punto.duracionSugerida}</ThemedText>
+            </View>
+            <View style={styles.metricCard}>
+              <Ionicons name="cash-outline" size={18} color="#256D85" />
+              <ThemedText style={styles.metricLabel}>Costo</ThemedText>
+              <ThemedText style={styles.metricValue}>{punto.costoEntrada}</ThemedText>
+            </View>
+            <View style={styles.metricCard}>
+              <Ionicons name="calendar-outline" size={18} color="#256D85" />
+              <ThemedText style={styles.metricLabel}>Horario</ThemedText>
+              <ThemedText style={styles.metricValue}>{punto.horario}</ThemedText>
+            </View>
+            <View style={styles.metricCard}>
+              <Ionicons name="walk-outline" size={18} color="#256D85" />
+              <ThemedText style={styles.metricLabel}>Ideal para</ThemedText>
+              <ThemedText style={styles.metricValue}>{punto.recomendadoPara}</ThemedText>
+            </View>
+          </View>
+        </View>
+
+        <View style={styles.sectionCard}>
+          <View style={styles.sectionHeaderRow}>
+            <ThemedText type="defaultSemiBold" style={styles.sectionTitle}>
+              Mapa
+            </ThemedText>
+            <ThemedText style={styles.locationSourceText}>
+              {isResolvingLocation ? 'verificando...' : locationSourceLabel}
+            </ThemedText>
+          </View>
           <PuntoMap
             lat={location.lat}
             lng={location.lng}
             title={punto.nombre}
             description={punto.descripcion}
           />
-          <ThemedText style={styles.locationSourceText}>
-            Fuente de ubicacion: {isResolvingLocation ? 'verificando...' : locationSourceLabel}
-          </ThemedText>
-
-          <ThemedText type="defaultSemiBold" style={styles.sectionTitle}>
-            Informacion adicional
-          </ThemedText>
-          <ThemedText style={styles.infoItem}>
-            Categoria: {punto.categoria}
-          </ThemedText>
-          <ThemedText style={styles.infoItem}>
-            Direccion: {punto.direccion}
-          </ThemedText>
-          <ThemedText style={styles.infoItem}>
-            Horario: {punto.horario}
-          </ThemedText>
-          <ThemedText style={styles.infoItem}>
-            Duracion sugerida: {punto.duracionSugerida}
-          </ThemedText>
-          <ThemedText style={styles.infoItem}>
-            Costo: {punto.costoEntrada}
-          </ThemedText>
-          <ThemedText style={styles.infoItem}>
-            Recomendado para: {punto.recomendadoPara}
-          </ThemedText>
-          <ThemedText style={styles.infoItem}>
-            Servicios: {punto.servicios.join(', ')}
-          </ThemedText>
-
+          <View style={styles.actionRow}>
+            <Pressable style={styles.mapActionButton} onPress={handleOpenInMaps}>
+              <Ionicons name="navigate-outline" size={16} color="#fff" />
+              <ThemedText style={styles.mapActionText} type="subtitle">
+                Abrir en Maps
+              </ThemedText>
+            </Pressable>
+            <Pressable style={styles.secondaryActionButton} onPress={() => router.back()}>
+              <Ionicons name="arrow-back-outline" size={16} color="#256D85" />
+              <ThemedText style={styles.secondaryActionText}>Volver</ThemedText>
+            </Pressable>
+          </View>
         </View>
+
+        <View style={styles.sectionCard}>
+          <ThemedText type="defaultSemiBold" style={styles.sectionTitle}>
+            Información adicional
+          </ThemedText>
+
+          <View style={styles.detailRow}>
+            <ThemedText style={styles.detailLabel}>Dirección</ThemedText>
+            <ThemedText style={styles.detailValue}>{punto.direccion}</ThemedText>
+          </View>
+
+          <View style={styles.detailRow}>
+            <ThemedText style={styles.detailLabel}>Categoría</ThemedText>
+            <ThemedText style={styles.detailValue}>{punto.categoria}</ThemedText>
+          </View>
+
+          <View style={styles.detailRow}>
+            <ThemedText style={styles.detailLabel}>Horario</ThemedText>
+            <ThemedText style={styles.detailValue}>{punto.horario}</ThemedText>
+          </View>
+
+          <View style={styles.detailRow}>
+            <ThemedText style={styles.detailLabel}>Costo</ThemedText>
+            <ThemedText style={styles.detailValue}>{punto.costoEntrada}</ThemedText>
+          </View>
+        </View>
+
+        <View style={styles.sectionCard}>
+          <ThemedText type="defaultSemiBold" style={styles.sectionTitle}>
+            Servicios
+          </ThemedText>
+          <View style={styles.servicesWrap}>
+            {punto.servicios.map((servicio) => (
+              <View key={servicio} style={styles.serviceChip}>
+                <ThemedText style={styles.serviceChipText}>{servicio}</ThemedText>
+              </View>
+            ))}
+          </View>
+        </View>
+        </View>
+
       </ScrollView>
     </ThemedView>
   );
@@ -127,12 +207,73 @@ const styles = StyleSheet.create({
   content: {
     padding: 16,
     paddingBottom: 32,
+    gap: 14,
+    alignItems: 'center',
   },
-  image: {
+  frame: {
     width: '100%',
-    height: 240,
-    borderRadius: 16,
-    marginBottom: 16,
+    maxWidth: 620,
+    gap: 14,
+  },
+  heroCard: {
+    width: '100%',
+    minHeight: 320,
+    borderRadius: 28,
+    overflow: 'hidden',
+    backgroundColor: '#1C3E49',
+    justifyContent: 'flex-end',
+  },
+  heroImage: {
+    ...StyleSheet.absoluteFillObject,
+    width: '100%',
+    height: '100%',
+  },
+  heroOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(8, 35, 45, 0.52)',
+  },
+  backButton: {
+    position: 'absolute',
+    top: 16,
+    left: 16,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  heroContent: {
+    padding: 20,
+    gap: 12,
+  },
+  categoryPill: {
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(255,255,255,0.16)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.22)',
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    borderRadius: 999,
+  },
+  categoryPillText: {
+    color: '#fff',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  sectionCard: {
+    backgroundColor: '#fff',
+    borderRadius: 24,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
+    gap: 12,
   },
   infoCard: {
     backgroundColor: '#fff',
@@ -145,32 +286,123 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   name: {
-    fontSize: 24,
-    color: '#256D85',
-    marginBottom: 8,
+    fontSize: 30,
+    color: '#fff',
+    fontWeight: '800',
+    lineHeight: 32,
   },
   description: {
     fontSize: 16,
-    color: '#333',
-    lineHeight: 22,
-    marginBottom: 14,
+    color: 'rgba(255,255,255,0.92)',
+    lineHeight: 23,
+    maxWidth: 500,
   },
   sectionTitle: {
-    fontSize: 16,
+    fontSize: 17,
     color: '#256D85',
-    marginBottom: 6,
-    marginTop: 6,
   },
-  infoItem: {
-    fontSize: 15,
-    color: '#333',
-    lineHeight: 22,
-    marginBottom: 4,
+  infoGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  metricCard: {
+    flexGrow: 1,
+    minWidth: '47%',
+    backgroundColor: '#F4F8FA',
+    borderRadius: 16,
+    padding: 14,
+    gap: 6,
+  },
+  metricLabel: {
+    color: '#5A7C86',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  metricValue: {
+    color: '#1C3E49',
+    fontSize: 14,
+    lineHeight: 19,
+  },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
   },
   locationSourceText: {
     fontSize: 13,
     color: '#4F6F7A',
-    marginBottom: 10,
+    textAlign: 'right',
+    flexShrink: 1,
+  },
+  actionRow: {
+    flexDirection: 'row',
+    gap: 10,
+    flexWrap: 'wrap',
+  },
+  mapActionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: '#256D85',
+    borderRadius: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    minWidth: 150,
+  },
+  mapActionText: {
+    color: '#fff',
+  },
+  secondaryActionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: '#EAF2F6',
+    borderRadius: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    minWidth: 116,
+  },
+  secondaryActionText: {
+    color: '#256D85',
+    fontWeight: '700',
+  },
+  detailRow: {
+    gap: 4,
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#EEF2F4',
+  },
+  detailLabel: {
+    color: '#5A7C86',
+    fontSize: 12,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+  },
+  detailValue: {
+    color: '#1C3E49',
+    fontSize: 15,
+    lineHeight: 21,
+  },
+  servicesWrap: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  serviceChip: {
+    backgroundColor: '#EAF2F6',
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  serviceChipText: {
+    color: '#256D85',
+    fontSize: 12,
+    fontWeight: '700',
   },
   notFoundContainer: {
     flex: 1,

@@ -1,5 +1,7 @@
 import { Image } from 'expo-image';
-import { StyleSheet, View, Alert } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
 import { supabase } from '@/components/constants/supabase';
 import type { User } from '@supabase/supabase-js';
@@ -7,6 +9,7 @@ import React from 'react';
 
 export default function HomeScreen() {
   const [user, setUser] = React.useState<User | null>(null);
+  const router = useRouter();
 
   React.useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -30,45 +33,123 @@ export default function HomeScreen() {
     if (error) Alert.alert('Error', error.message);
   };
 
-  const signOut = async () => {
-    await supabase.auth.signOut();
-  };
+  const profileName =
+    user?.user_metadata?.full_name ?? user?.user_metadata?.name ?? user?.email ?? 'Perfil';
+  const profileImage = user?.user_metadata?.avatar_url ?? user?.user_metadata?.picture ?? null;
 
   return (
     <View style={styles.container}>
       <Image
         source={require('@/assets/images/portadaHero.png')}
         style={styles.backgroundImage}
-        blurRadius={1}
+        blurRadius={0}
       />
-      <View style={styles.overlay} />
-      <View style={styles.content}>
-        <ThemedText type="title" style={styles.heroTitle}>
-          Guía Turística Catamarca
-        </ThemedText>
-        <ThemedText type="subtitle" style={styles.heroSubtitle}>
-          Descubre los mejores puntos de interés de la provincia
-        </ThemedText>
-        {user ? (
-          <>
-            <View style={styles.button}>
-              <ThemedText style={styles.buttonText} type="subtitle" onPress={() => window.location.href = '/explore'}>
-                Explorar puntos turísticos
-              </ThemedText>
+      <View style={styles.overlay} pointerEvents="none" />
+      <View style={styles.foreground}>
+        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+          <View style={styles.contentFrame}>
+
+          <View style={styles.heroCard}>
+            <View style={styles.heroTopRow}>
+              <View style={styles.heroMark}>
+                <Ionicons name="compass" size={18} color="#fff" />
+              </View>
+              <ThemedText style={styles.heroEyebrow}>Experiencia turística digital</ThemedText>
             </View>
-            <View style={{ marginTop: 12 }}>
-              <ThemedText style={{ color: '#fff', textAlign: 'center' }} onPress={signOut}>
-                Cerrar sesión
-              </ThemedText>
-            </View>
-          </>
-        ) : (
-          <View style={{ ...styles.button, backgroundColor: '#DB4437', marginTop: 16 }}>
-            <ThemedText style={styles.buttonText} type="subtitle" onPress={signInWithGoogle}>
-              Iniciar sesión con Google
+
+            <ThemedText type="title" style={styles.heroTitle}>
+              Guía Turística Catamarca
             </ThemedText>
+            <ThemedText type="subtitle" style={styles.heroSubtitle}>
+              Descubre puntos de interés, guarda favoritos y abre el mapa en un solo toque.
+            </ThemedText>
+
+            <View style={styles.statsRow}>
+              <View style={styles.statCard}>
+                <ThemedText type="subtitle" style={styles.statValue}>
+                  3+
+                </ThemedText>
+                <ThemedText style={styles.statLabel}>lugares destacados</ThemedText>
+              </View>
+              <View style={styles.statCard}>
+                <ThemedText type="subtitle" style={styles.statValue}>
+                  Mapas
+                </ThemedText>
+                <ThemedText style={styles.statLabel}>web y móvil</ThemedText>
+              </View>
+              <View style={styles.statCard}>
+                <ThemedText type="subtitle" style={styles.statValue}>
+                  Perfil
+                </ThemedText>
+                <ThemedText style={styles.statLabel}>favoritos privados</ThemedText>
+              </View>
+            </View>
+
+            {user ? (
+              <View style={styles.actionsColumn}>
+                <Pressable
+                  style={({ pressed }) => [styles.primaryButton, pressed && styles.buttonPressed]}
+                  onPress={() => router.push('/(tabs)/explore' as never)}>
+                  <Ionicons name="compass" size={18} color="#fff" />
+                  <ThemedText style={styles.buttonText} type="subtitle">
+                    Explorar puntos turísticos
+                  </ThemedText>
+                </Pressable>
+
+                <Pressable
+                  style={({ pressed }) => [styles.profileButton, pressed && styles.buttonPressed]}
+                  onPress={() => router.push('/profile' as never)}>
+                  {profileImage ? (
+                    <Image source={{ uri: profileImage }} style={styles.profileAvatar} contentFit="cover" />
+                  ) : (
+                    <View style={styles.profileAvatarPlaceholder}>
+                      <ThemedText style={styles.profileAvatarPlaceholderText} type="subtitle">
+                        {profileName.charAt(0).toUpperCase()}
+                      </ThemedText>
+                    </View>
+                  )}
+                  <View style={styles.profileTextContainer}>
+                    <ThemedText type="subtitle" style={styles.profileName}>
+                      {profileName}
+                    </ThemedText>
+                    <ThemedText style={styles.profileLabel}>Abrir perfil y favoritos</ThemedText>
+                  </View>
+                  <Ionicons name="chevron-forward" size={18} color="#6B8791" />
+                </Pressable>
+              </View>
+            ) : (
+              <View style={styles.actionsColumn}>
+                <Pressable
+                  style={({ pressed }) => [styles.signInButton, pressed && styles.buttonPressed]}
+                  onPress={signInWithGoogle}>
+                  <Ionicons name="logo-google" size={18} color="#fff" />
+                  <ThemedText style={styles.buttonText} type="subtitle">
+                    Iniciar sesión con Google
+                  </ThemedText>
+                </Pressable>
+                <ThemedText style={styles.helperText}>
+                  Inicia sesión para guardar favoritos y sincronizar tu perfil.
+                </ThemedText>
+              </View>
+            )}
           </View>
-        )}
+
+            <View style={styles.featureStrip}>
+              <View style={styles.featureChip}>
+                <Ionicons name="heart-outline" size={14} color="#256D85" />
+                <ThemedText style={styles.featureChipText}>Favoritos privados</ThemedText>
+              </View>
+              <View style={styles.featureChip}>
+                <Ionicons name="location-outline" size={14} color="#256D85" />
+                <ThemedText style={styles.featureChipText}>Mapa interactivo</ThemedText>
+              </View>
+              <View style={styles.featureChip}>
+                <Ionicons name="phone-portrait-outline" size={14} color="#256D85" />
+                <ThemedText style={styles.featureChipText}>Diseño adaptativo</ThemedText>
+              </View>
+            </View>
+          </View>
+        </ScrollView>
       </View>
     </View>
   );
@@ -77,10 +158,8 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
     position: 'relative',
-    backgroundColor: '#000',
+    backgroundColor: '#F3F7FA',
   },
   backgroundImage: {
     position: 'absolute',
@@ -96,80 +175,222 @@ const styles = StyleSheet.create({
     left: 0,
     width: '100%',
     height: '100%',
-    backgroundColor: 'rgba(0,0,0,0.45)',
+    backgroundColor: 'rgba(7, 28, 38, 0.22)',
     zIndex: 1,
   },
-  content: {
+  foreground: {
     flex: 1,
+    position: 'relative',
+    zIndex: 2,
+  },
+  content: {
+    flexGrow: 1,
     width: '100%',
+    zIndex: 2,
+    paddingHorizontal: 20,
+    paddingTop: 56,
+    paddingBottom: 32,
+    gap: 16,
+    alignItems: 'center',
+  },
+  contentFrame: {
+    width: '100%',
+    maxWidth: 560,
+    gap: 16,
+  },
+  heroBadge: {
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: 'rgba(255,255,255,0.92)',
+    borderColor: '#D8E7ED',
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  heroBadgeText: {
+    color: '#256D85',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  heroCard: {
+    backgroundColor: 'rgba(255,255,255,0.55)',
+    borderRadius: 28,
+    padding: 22,
+    borderWidth: 1,
+    borderColor: '#E4EDF1',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.08,
+    shadowRadius: 18,
+    elevation: 5,
+    gap: 18,
+  },
+  heroTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  heroMark: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    backgroundColor: '#256D85',
     alignItems: 'center',
     justifyContent: 'center',
-    zIndex: 2,
-    paddingHorizontal: 24,
-    paddingTop: 60,
-    paddingBottom: 40,
+  },
+  heroEyebrow: {
+    color: '#6B8791',
+    fontSize: 12,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
   },
   heroTitle: {
-    fontSize: 38,
-    fontWeight: 'bold',
-    marginBottom: 12,
-    color: '#fff',
-    textAlign: 'center',
-    textShadowColor: '#000',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 8,
+    fontSize: 34,
+    fontWeight: '800',
+    color: '#153743',
+    lineHeight: 40,
   },
   heroSubtitle: {
-    fontSize: 22,
-    color: '#fff',
-    marginBottom: 24,
-    textAlign: 'center',
-    textShadowColor: '#000',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 6,
+    fontSize: 18,
+    color: '#415E68',
+    lineHeight: 26,
   },
-  menu: {
-    marginBottom: 32,
-    alignItems: 'center',
+  statsRow: {
+    flexDirection: 'row',
+    gap: 10,
+    flexWrap: 'wrap',
   },
-  menuTitle: {
-    fontSize: 22,
-    marginBottom: 8,
-    color: '#fff',
-    textShadowColor: '#000',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 4,
+  statCard: {
+    flexGrow: 1,
+    minWidth: 96,
+    backgroundColor: 'rgba(245,249,251,0.88)',
+    borderRadius: 18,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: '#E1EBEF',
   },
-  menuItems: {
-    marginBottom: 8,
+  statValue: {
+    color: '#153743',
+    fontSize: 17,
+    marginBottom: 4,
   },
-  menuItem: {
-    fontSize: 20,
-    color: '#fff',
-    marginVertical: 2,
-    textShadowColor: '#000',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 3,
+  statLabel: {
+    color: '#5A7C86',
+    fontSize: 12,
   },
-  button: {
+  actionsColumn: {
+    gap: 12,
+  },
+  primaryButton: {
     backgroundColor: '#256D85',
-    paddingVertical: 18,
-    paddingHorizontal: 40,
-    borderRadius: 10,
+    minHeight: 56,
+    paddingHorizontal: 18,
+    borderRadius: 16,
     alignItems: 'center',
-    marginTop: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 4,
+    justifyContent: 'center',
+    flexDirection: 'row',
+    gap: 10,
+  },
+  signInButton: {
+    backgroundColor: '#DB4437',
+    minHeight: 56,
+    paddingHorizontal: 18,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+    gap: 10,
+  },
+  buttonPressed: {
+    opacity: 0.92,
+    transform: [{ scale: 0.99 }],
   },
   buttonText: {
     color: '#fff',
+    fontSize: 17,
+    fontWeight: '700',
+  },
+  profileButton: {
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    padding: 16,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255,255,255,0.92)',
+    borderWidth: 1,
+    borderColor: '#DCE7EC',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 2,
+  },
+  profileAvatar: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+  },
+  profileAvatarPlaceholder: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#256D85',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  profileAvatarPlaceholderText: {
+    color: '#fff',
     fontSize: 22,
-    fontWeight: 'bold',
-    textShadowColor: '#000',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
+  },
+  profileTextContainer: {
+    flex: 1,
+  },
+  profileName: {
+    color: '#153743',
+    fontSize: 18,
+  },
+  profileLabel: {
+    color: '#5A7C86',
+    marginTop: 2,
+    fontSize: 13,
+  },
+  helperText: {
+    color: '#5A7C86',
+    fontSize: 13,
+    lineHeight: 19,
+    paddingHorizontal: 2,
+  },
+  featureStrip: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    justifyContent: 'center',
+  },
+  featureChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(255,255,255,0.92)',
+    borderWidth: 1,
+    borderColor: '#E1EBEF',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 999,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 3,
+    elevation: 1,
+  },
+  featureChipText: {
+    color: '#256D85',
+    fontSize: 12,
+    fontWeight: '700',
   },
 });
