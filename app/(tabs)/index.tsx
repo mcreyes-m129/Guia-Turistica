@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
 import { supabase } from '@/components/constants/supabase';
+import { isAdminUser } from '@/constants/admin';
 import type { User } from '@supabase/supabase-js';
 import React from 'react';
 
@@ -36,6 +37,7 @@ export default function HomeScreen() {
   const profileName =
     user?.user_metadata?.full_name ?? user?.user_metadata?.name ?? user?.email ?? 'Perfil';
   const profileImage = user?.user_metadata?.avatar_url ?? user?.user_metadata?.picture ?? null;
+  const isAdmin = isAdminUser(user);
 
   return (
     <View style={styles.container}>
@@ -96,6 +98,17 @@ export default function HomeScreen() {
                   </ThemedText>
                 </Pressable>
 
+                {isAdmin ? (
+                  <Pressable
+                    style={({ pressed }) => [styles.adminButton, pressed && styles.buttonPressed]}
+                    onPress={() => router.push('/admin' as never)}>
+                    <Ionicons name="settings-outline" size={18} color="#fff" />
+                    <ThemedText style={styles.adminButtonText} type="subtitle">
+                      Panel de administración
+                    </ThemedText>
+                  </Pressable>
+                ) : null}
+
                 <Pressable
                   style={({ pressed }) => [styles.profileButton, pressed && styles.buttonPressed]}
                   onPress={() => router.push('/profile' as never)}>
@@ -125,6 +138,14 @@ export default function HomeScreen() {
                   <Ionicons name="logo-google" size={18} color="#fff" />
                   <ThemedText style={styles.buttonText} type="subtitle">
                     Iniciar sesión con Google
+                  </ThemedText>
+                </Pressable>
+                <Pressable
+                  style={({ pressed }) => [styles.guestButton, pressed && styles.buttonPressed]}
+                  onPress={() => router.push('/(tabs)/explore' as never)}>
+                  <Ionicons name="compass-outline" size={18} color="#256D85" />
+                  <ThemedText style={styles.guestButtonText} type="subtitle">
+                    Entrar como invitado
                   </ThemedText>
                 </Pressable>
                 <ThemedText style={styles.helperText}>
@@ -237,12 +258,12 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 10,
-    backgroundColor: '#256D85',
+    backgroundColor: '#153743',
     alignItems: 'center',
     justifyContent: 'center',
   },
   heroEyebrow: {
-    color: '#6B8791',
+    color: '#153743',
     fontSize: 12,
     fontWeight: '700',
     textTransform: 'uppercase',
@@ -296,6 +317,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 10,
   },
+  adminButton: {
+    backgroundColor: '#153743',
+    minHeight: 52,
+    paddingHorizontal: 18,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+    gap: 10,
+  },
   signInButton: {
     backgroundColor: '#DB4437',
     minHeight: 56,
@@ -306,6 +337,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 10,
   },
+  guestButton: {
+    backgroundColor: 'rgba(255,255,255,0.95)',
+    minHeight: 52,
+    paddingHorizontal: 18,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+    gap: 10,
+    borderWidth: 1,
+    borderColor: '#CFE0E6',
+  },
   buttonPressed: {
     opacity: 0.92,
     transform: [{ scale: 0.99 }],
@@ -313,6 +356,16 @@ const styles = StyleSheet.create({
   buttonText: {
     color: '#fff',
     fontSize: 17,
+    fontWeight: '700',
+  },
+  adminButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  guestButtonText: {
+    color: '#256D85',
+    fontSize: 16,
     fontWeight: '700',
   },
   profileButton: {

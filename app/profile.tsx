@@ -8,14 +8,16 @@ import { supabase } from '@/components/constants/supabase';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import type { User } from '@supabase/supabase-js';
-import { puntosDeInteres } from '@/assets/images/puntos-interes';
-import { getFavoritePointIds } from '@/services/favorites';
+import { loadFavoritePointIds } from '@/services/favorites';
+import { fallbackTouristPoints, loadTouristPoints, type TouristPoint } from '@/services/tourist-points';
 
 export default function ProfileModalScreen() {
   const router = useRouter();
   const [user, setUser] = React.useState<User | null>(null);
-  const favoritePointIds = getFavoritePointIds(user);
-  const favoritePoints = puntosDeInteres.filter((point) => favoritePointIds.includes(point.id));
+  const [points, setPoints] = React.useState<TouristPoint[]>([]);
+  const [isLoadingPoints, setIsLoadingPoints] = React.useState(true);
+  const [favoritePointIds, setFavoritePointIds] = React.useState<string[]>([]);
+  const favoritePoints = points.filter((point) => favoritePointIds.includes(point.id));
 
   React.useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -28,6 +30,47 @@ export default function ProfileModalScreen() {
 
     return () => {
       listener?.subscription.unsubscribe();
+    };
+  }, []);
+
+  React.useEffect(() => {
+    if (!user) {
+      setFavoritePointIds([]);
+      return;
+    }
+
+    loadFavoritePointIds(user.id)
+      .then((ids) => {
+        setFavoritePointIds(ids);
+      })
+      .catch(() => {
+        setFavoritePointIds([]);
+      });
+  }, [user]);
+
+  React.useEffect(() => {
+    let active = true;
+    setIsLoadingPoints(true);
+
+    loadTouristPoints()
+      .then((data) => {
+        if (active) {
+          setPoints(data);
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setPoints(fallbackTouristPoints());
+        }
+      })
+      .finally(() => {
+        if (active) {
+          setIsLoadingPoints(false);
+        }
+      });
+
+    return () => {
+      active = false;
     };
   }, []);
 
@@ -135,7 +178,9 @@ export default function ProfileModalScreen() {
               : 'Aún no marcaste ningún punto como favorito'}
           </ThemedText>
 
-          {favoritePoints.length > 0 ? (
+          {isLoadingPoints ? (
+            <ThemedText style={styles.sectionSubtitle}>Cargando favoritos...</ThemedText>
+          ) : favoritePoints.length > 0 ? (
             favoritePoints.map((point) => (
               <Pressable
                 key={point.id}

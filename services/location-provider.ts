@@ -1,4 +1,4 @@
-import type { PuntoInteres } from '@/assets/images/puntos-interes';
+import type { TouristPoint } from '@/services/tourist-points';
 
 type LocationSource = 'google' | 'nominatim' | 'static';
 
@@ -10,7 +10,7 @@ export type ResolvedLocation = {
 
 const locationCache = new Map<string, ResolvedLocation>();
 
-function buildLocationQuery(punto: PuntoInteres): string {
+function buildLocationQuery(punto: TouristPoint): string {
   return `${punto.nombre}, ${punto.direccion}, Catamarca, Argentina`;
 }
 
@@ -70,7 +70,7 @@ async function geocodeWithNominatim(query: string): Promise<ResolvedLocation | n
   };
 }
 
-export async function resolvePuntoLocation(punto: PuntoInteres): Promise<ResolvedLocation> {
+export async function resolvePuntoLocation(punto: TouristPoint): Promise<ResolvedLocation> {
   const cached = locationCache.get(punto.id);
   if (cached) {
     return cached;

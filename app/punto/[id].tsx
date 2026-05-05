@@ -1,21 +1,99 @@
 import { useLocalSearchParams, Stack, useRouter } from 'expo-router';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
-import { Linking, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, Linking, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import React from 'react';
 
-import { puntosDeInteres } from '@/assets/images/puntos-interes';
 import { PuntoMap } from '@/components/punto-map';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { resolvePuntoLocation } from '@/services/location-provider';
+import { fallbackTouristPoints, loadTouristPoint, type TouristPoint } from '@/services/tourist-points';
+import { supabase } from '@/components/constants/supabase';
+import type { User } from '@supabase/supabase-js';
+import { addFavoritePoint, loadFavoritePointIds, removeFavoritePoint } from '@/services/favorites';
 
 export default function PuntoDetalleScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const punto = puntosDeInteres.find((item) => item.id === id);
-  const [location, setLocation] = React.useState({ lat: punto?.ubicacion.lat ?? 0, lng: punto?.ubicacion.lng ?? 0, source: 'static' as 'google' | 'nominatim' | 'static' });
+  const [punto, setPunto] = React.useState<TouristPoint | null>(null);
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [location, setLocation] = React.useState({ lat: 0, lng: 0, source: 'static' as 'google' | 'nominatim' | 'static' });
   const [isResolvingLocation, setIsResolvingLocation] = React.useState(false);
+  const [user, setUser] = React.useState<User | null>(null);
+  const [favoriteIds, setFavoriteIds] = React.useState<string[]>([]);
+
+  const isFavorite = punto ? favoriteIds.includes(punto.id) : false;
+
+  React.useEffect(() => {
+    let active = true;
+
+    if (!id) {
+      setIsLoading(false);
+      return () => {
+        active = false;
+      };
+    }
+
+    setIsLoading(true);
+
+    loadTouristPoint(id)
+      .then((data) => {
+        if (!active) {
+          return;
+        }
+        if (data) {
+          setPunto(data);
+        } else {
+          const fallback = fallbackTouristPoints().find((item) => item.id === id) ?? null;
+          setPunto(fallback);
+        }
+      })
+      .catch(() => {
+        if (active) {
+          const fallback = fallbackTouristPoints().find((item) => item.id === id) ?? null;
+          setPunto(fallback);
+        }
+      })
+      .finally(() => {
+        if (active) {
+          setIsLoading(false);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [id]);
+
+  React.useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      setUser(data?.user ?? null);
+    });
+
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => {
+      listener?.subscription.unsubscribe();
+    };
+  }, []);
+
+  React.useEffect(() => {
+    if (!user) {
+      setFavoriteIds([]);
+      return;
+    }
+
+    loadFavoritePointIds(user.id)
+      .then((ids) => {
+        setFavoriteIds(ids);
+      })
+      .catch(() => {
+        setFavoriteIds([]);
+      });
+  }, [user]);
 
   React.useEffect(() => {
     if (!punto) {
@@ -64,12 +142,48 @@ export default function PuntoDetalleScreen() {
     }
   };
 
-  if (!punto) {
+  const handleToggleFavorite = async () => {
+    if (!punto) {
+      return;
+    }
+    if (!user) {
+      Alert.alert('Favoritos', 'Inicia sesion para guardar favoritos.');
+      return;
+    }
+
+    const wasFavorite = favoriteIds.includes(punto.id);
+    setFavoriteIds((prev) =>
+      wasFavorite ? prev.filter((id) => id !== punto.id) : [...prev, punto.id],
+    );
+
+    try {
+      if (wasFavorite) {
+        await removeFavoritePoint(user.id, punto.id);
+      } else {
+        await addFavoritePoint(user.id, punto.id);
+      }
+    } catch (toggleError) {
+      setFavoriteIds((prev) =>
+        wasFavorite ? [...prev, punto.id] : prev.filter((id) => id !== punto.id),
+      );
+      Alert.alert('Error', toggleError instanceof Error ? toggleError.message : 'No se pudo actualizar favorito.');
+    }
+  };
+
+  if (!punto && !isLoading) {
     return (
       <ThemedView style={styles.notFoundContainer}>
         <Stack.Screen options={{ title: 'Punto no encontrado' }} />
         <ThemedText type="title">Punto no encontrado</ThemedText>
         <ThemedText>El punto turístico solicitado no existe.</ThemedText>
+      </ThemedView>
+    );
+  }
+
+  if (!punto) {
+    return (
+      <ThemedView style={styles.notFoundContainer}>
+        <ThemedText>Cargando punto...</ThemedText>
       </ThemedView>
     );
   }
@@ -84,6 +198,9 @@ export default function PuntoDetalleScreen() {
           <View style={styles.heroOverlay} />
           <Pressable style={styles.backButton} onPress={() => router.back()}>
             <Ionicons name="chevron-back" size={20} color="#fff" />
+          </Pressable>
+          <Pressable style={styles.favoriteButton} onPress={handleToggleFavorite}>
+            <Ionicons name={isFavorite ? 'heart' : 'heart-outline'} size={20} color="#fff" />
           </Pressable>
           <View style={styles.heroContent}>
             <View style={styles.categoryPill}>
@@ -236,6 +353,17 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 16,
     left: 16,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  favoriteButton: {
+    position: 'absolute',
+    top: 16,
+    right: 16,
     width: 40,
     height: 40,
     borderRadius: 20,

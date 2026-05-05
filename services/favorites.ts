@@ -1,16 +1,40 @@
-import type { User } from '@supabase/supabase-js';
+import { supabase } from '@/components/constants/supabase';
 
-const FAVORITES_KEY = 'favorite_point_ids';
+type FavoriteRow = {
+  point_id: string;
+};
 
-export function getFavoritePointIds(user: User | null): string[] {
-  const value = user?.user_metadata?.[FAVORITES_KEY];
-  if (!Array.isArray(value)) {
-    return [];
+export async function loadFavoritePointIds(userId: string): Promise<string[]> {
+  const { data, error } = await supabase
+    .from('favorites')
+    .select('point_id')
+    .eq('user_id', userId);
+
+  if (error) {
+    throw new Error(error.message);
   }
 
-  return value.filter((item): item is string => typeof item === 'string');
+  return (data ?? []).map((row) => (row as FavoriteRow).point_id);
 }
 
-export function isFavoritePoint(user: User | null, pointId: string): boolean {
-  return getFavoritePointIds(user).includes(pointId);
+export async function addFavoritePoint(userId: string, pointId: string): Promise<void> {
+  const { error } = await supabase
+    .from('favorites')
+    .insert({ user_id: userId, point_id: pointId });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+}
+
+export async function removeFavoritePoint(userId: string, pointId: string): Promise<void> {
+  const { error } = await supabase
+    .from('favorites')
+    .delete()
+    .eq('user_id', userId)
+    .eq('point_id', pointId);
+
+  if (error) {
+    throw new Error(error.message);
+  }
 }
