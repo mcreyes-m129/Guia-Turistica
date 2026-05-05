@@ -1,12 +1,19 @@
 # Guia Turistica Catamarca
 
-## Descripcion de la aplicacion
-Guia Turistica Catamarca es una aplicacion desarrollada para explorar puntos de interes de San Fernando del Valle de Catamarca. La app permite:
+## Descripcion
+Guia Turistica Catamarca es una aplicacion para explorar puntos de interes de San Fernando del Valle de Catamarca. La app permite:
 
 1. Visualizar una lista de lugares turisticos en formato de tarjetas.
 2. Ingresar al detalle de cada punto turistico.
-3. Ver mapa con ubicacion del lugar (web y dispositivos moviles).
+3. Ver el mapa con la ubicacion del lugar (web y dispositivos moviles).
 4. Consultar informacion adicional como categoria, direccion, horario, costo y servicios.
+
+## Funcionalidades principales
+- Navegacion con Expo Router.
+- Vista de detalle por punto turistico.
+- Mapas en Android/iOS con React Native Maps.
+- Mapa embebido en web mediante Google Maps.
+- Integracion con Supabase para autenticacion y datos.
 
 ## Tecnologias utilizadas
 1. Expo
@@ -15,9 +22,14 @@ Guia Turistica Catamarca es una aplicacion desarrollada para explorar puntos de 
 4. Expo Router
 5. React Native Maps (Android/iOS)
 6. Google Maps embed para visualizacion web
-7. Supabase (autenticacion)
+7. Supabase
 
-## Instrucciones de instalacion y ejecucion
+## Requisitos
+- Node.js LTS
+- Expo CLI (se usa a traves de los scripts)
+- Android Studio o Xcode si se ejecuta en dispositivo/emulador
+
+## Instalacion y ejecucion
 1. Clonar el repositorio.
 2. Instalar dependencias:
 
@@ -49,5 +61,22 @@ npm run web
 npm run android
 ```
 
+## Scripts disponibles
+- `npm run start`: inicia el servidor de desarrollo de Expo.
+- `npm run web`: inicia la version web.
+- `npm run android`: inicia la app en Android.
+- `npm run ios`: inicia la app en iOS.
+- `npm run lint`: ejecuta el linter.
+
+## Estructura del proyecto
+- `app/`: rutas y pantallas (Expo Router).
+- `components/`: componentes reutilizables.
+- `services/`: acceso a datos, favoritos y geolocalizacion.
+- `assets/`: imagenes y recursos.
+- `supabase/`: migraciones y esquema.
+
+## Configuracion de Supabase
+Las credenciales de Supabase estan definidas en [components/constants/supabase.ts](components/constants/supabase.ts). Si vas a usar un proyecto propio, reemplaza la URL y la clave anonima por tus valores.
+
 ## Nombre del estudiante
-Mario Ivan Carreño - MU N° 129
+Mario Ivan Carreno - MU N 129
